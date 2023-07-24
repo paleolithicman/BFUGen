@@ -69,10 +69,12 @@ void inputUnit::inputUnit_main() {
     header_t header_1;
     header_t header_2;
     header_t header_3;
+    primate_stream_512_4::payload_t payload;
+    primate_ctrl_iu::cmd_t cmd;
 
     // initialize handshake
-    in_ready.write(0);
-    ar_ready.write(0);
+    stream_in.reset();
+    cmd_in.reset();
     pkt_buf_valid.write(0);
     out_valid.write(0);
     out_tag.write(0);
@@ -80,38 +82,26 @@ void inputUnit::inputUnit_main() {
     for (int i = 0; i < 2; i++) {
         out_wen[i].write(0);
     }
-    state = 0;
+    state = 15;
     wait();
 
     // main FSM
     while (true) {
-        ar_ready.write(0);
-        in_ready.write(0);
+        cmd_in.reset();
+        stream_in.reset();
         cout << sc_time_stamp() << ": state " << state << endl;
-        cout << sc_time_stamp() << ": in_valid " << in_valid.read() << endl;
-        if (state == 0) {
-            ar_ready.write(1);
-            in_ready.write(1);
-            bool ar_started = false;
-            bool in_started = false;
-            do {
-                wait();
-                if (ar_valid.read()) {
-                    ar_started = true;
-                    ar_ready.write(0);
-                }
-                if (in_valid.read()) {
-                    in_started = true;
-                    in_ready.write(0);
-                }
-            } while (!(ar_started && in_started));
+        if (state == 15) {
+            cmd = cmd_in.read();
+            state = 0;
+        } else if (state == 0) {
+            payload = stream_in.read();
             
-            cout << sc_time_stamp() << ": in_data " << hex << in_data.read() << dec << endl;
-            in_data_buf = in_data.read();
-            last_buf = in_last.read();
-            tag = ar_tag.read();
-            eth.set(in_data_buf.range(111, 0));
-            ptp_l.set(in_data_buf.range(271, 112));
+            cout << sc_time_stamp() << ": in_data " << payload << endl;
+            in_data_buf = payload.data;
+            last_buf = payload.last;
+            tag = payload.tag;
+            eth.set(payload.data.range(111, 0));
+            ptp_l.set(payload.data.range(271, 112));
             if (eth.etherType == 0x88f7) {
                 // write ethernet header and ptp header
                 out_wen[0].write(1);
@@ -121,7 +111,7 @@ void inputUnit::inputUnit_main() {
                 out_addr[1].write(2);
                 out_data[1].write(ptp_l.to_uint());
                 out_valid.write(0);
-                out_tag.write(ar_tag.read());
+                out_tag.write(cmd.ar_tag);
                 state = 1;
             } else {
                 // write ethernet header only
@@ -131,9 +121,9 @@ void inputUnit::inputUnit_main() {
                 out_wen[1].write(1);
                 out_addr[1].write(22);
                 out_data[1].write(1);
-                out_valid.write(in_last.read());
-                out_tag.write(ar_tag.read());
-                pkt_data_buf = in_data_buf >> 112;
+                out_valid.write(payload.last);
+                out_tag.write(cmd.ar_tag);
+                pkt_data_buf = (payload.data) >> 112;
                 pkt_empty = 112 / 8;
                 state = 11;
             }
@@ -147,17 +137,13 @@ void inputUnit::inputUnit_main() {
         } else if (state == 1) {
             ptp_h = in_data_buf.range(463, 272);
             if (ptp_l.reserved2 == 1) {
-                in_ready.write(1);
-                do {
-                    wait();
-                } while (!in_valid.read());
-                in_ready.write(0);
+                payload = stream_in.read();
 
-                cout << sc_time_stamp() << ": in_data " << hex << in_data.read() << dec << endl;
-                sc_biguint<64> hdr_val = (in_data.read().range(15, 0), in_data_buf.range(511, 464));
+                cout << sc_time_stamp() << ": in_data " << payload << endl;
+                sc_biguint<64> hdr_val = (payload.data.range(15, 0), in_data_buf.range(511, 464));
                 header_0.set(hdr_val);
-                in_data_buf = in_data.read();
-                last_buf = in_last.read();
+                in_data_buf = payload.data;
+                last_buf = payload.last;
                 out_wen[0].write(1);
                 out_addr[0].write(3);
                 out_data[0].write(ptp_h);
@@ -262,7 +248,7 @@ void inputUnit::inputUnit_main() {
             out_valid.write(0);
             out_wen[0].write(0);
             out_wen[1].write(0);
-            pkt_buf_t pkt_buf_in(pkt_data_buf, tag, pkt_empty, last_buf);
+            primate_stream_512_4::payload_t pkt_buf_in(pkt_data_buf, tag, pkt_empty, last_buf);
             pkt_buf_valid.write(1);
             pkt_buf_data.write(pkt_buf_in);
             if (last_buf) {
@@ -276,19 +262,13 @@ void inputUnit::inputUnit_main() {
             } while (!pkt_buf_ready.read());
             pkt_buf_valid.write(0);
         } else if (state == 12) {
-            in_ready.write(1);
-            do {
-                wait();
-            } while (!in_valid.read());
-            in_ready.write(0);
-            cout << sc_time_stamp() << ": in_data " << hex << in_data.read() << dec << endl;
-            cout << sc_time_stamp() << ": in_last " << hex << in_last.read() << dec << endl;
-            pkt_buf_t pkt_buf_in(in_data.read(), tag, in_empty.read(), in_last.read());
+            payload = stream_in.read();
+            cout << sc_time_stamp() << ": in_data " << payload << endl;
             pkt_buf_valid.write(1);
-            pkt_buf_data.write(pkt_buf_in);
-            if (in_last.read()) {
+            pkt_buf_data.write(payload);
+            if (payload.last) {
                 out_valid.write(1);
-                state = 0;
+                state = 15;
             }
 
             do {

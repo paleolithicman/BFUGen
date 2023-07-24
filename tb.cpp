@@ -22,17 +22,8 @@ void tb::source() {
     infile.open("input.txt");
 
     // Reset
-    in_valid.write(0);
-    in_tag.write(0);
-    in_data.write(0);
-    in_empty.write(0);
-    in_last.write(0);
-    ar_valid.write(0);
-    ar_tag.write(0);
-    ar_opcode.write(0);
-    ar_rd.write(0);
-    ar_bits.write(0);
-    ar_imm.write(0);
+    stream_out.reset();
+    cmd_out.reset();
     rst.write(1);
     wait();
     rst.write(0);
@@ -41,30 +32,15 @@ void tb::source() {
     // Send stimulus to DUT
     for (int i = 0; i < NUM_PKT; i++) {
         cout << "packet " << i << endl;
-        ar_valid.write(1);
-        ar_tag.write(i);
-        ar_opcode.write(4);
-        ar_rd.write(1);
-        ar_bits.write(0);
-        ar_imm.write(0);
         start_time[i] = sc_time_stamp();
+
+        primate_ctrl_iu::cmd_t cmd(i, 4, 1, 0, 0);
+        cmd_out.write(cmd);
+
         do {
             infile >> last >> empty >> indata;
-            in_valid.write(1);
-            in_tag.write(i);
-            in_data.write(str2biguint(indata));
-            in_empty.write(empty);
-            in_last.write(last);
-
-
-            do {
-                cout << sc_time_stamp() << ": in_ready " << in_ready.read() << endl;
-                wait();
-                if (ar_ready.read()) {
-                    ar_valid.write(0);
-                }
-            } while (!in_ready.read());
-            in_valid.write(0);
+            primate_stream_512_4::payload_t payload(str2biguint(indata), i, empty, last);
+            stream_out.write(payload);
         } while (!last);
     }
 
@@ -79,7 +55,7 @@ void tb::sink() {
     map<int, int> reg2idx{{1, 0}, {2, 1}, {3, 2}, {4, 3}, {5, 4}, {22, 5}};
     int idx2reg[6] = {1, 2, 3, 4, 5, 22};
     sc_biguint<REG_WIDTH> regs[6];
-    pkt_buf_t pkt_buf[4];
+    primate_stream_512_4::payload_t pkt_buf[4];
 
     // Extract clock period
     sc_clock *clk_p = dynamic_cast<sc_clock*>(clk.get_interface());
@@ -119,10 +95,10 @@ void tb::sink() {
 
         // Print outputs
         for (int j = 0; j < 6; j++) {
-            outfile << "REG " << idx2reg[j] << ": " << hex << regs[j] << endl;
+            outfile << "REG " << idx2reg[j] << ": " << hex << regs[j] << dec << endl;
         }
         for (int j = 0; j < num_pkt_buf; j++) {
-            outfile << hex << pkt_buf[j];
+            outfile << pkt_buf[j];
         }
     }
 
