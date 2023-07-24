@@ -10,17 +10,9 @@ SC_MODULE(tb) {
 
     primate_ctrl_iu::master          cmd_out;
 
-    sc_out<bool>                     out_ready;
-    sc_in<bool>                      out_valid;
-    sc_in<sc_uint<NUM_THREADS_LG>>   out_tag;
-    sc_in<sc_uint<IP_WIDTH>>         out_flag;
-    sc_vector<sc_in<bool>>                    out_wen{"out_wen", 2};
-    sc_vector<sc_in<sc_uint<NUM_REGS_LG>>>    out_addr{"out_addr", 2};
-    sc_vector<sc_in<sc_biguint<REG_WIDTH>>>   out_data{"out_data", 2};
+    primate_bfu_iu::slave            bfu_in;
 
-    sc_in<bool>                            pkt_buf_valid;
-    sc_in<primate_stream_512_4::payload_t> pkt_buf_data;
-    sc_out<bool>                           pkt_buf_ready;
+    primate_stream_512_4::in         pkt_buf_in;
 
     void source();
     void sink();

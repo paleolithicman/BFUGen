@@ -75,8 +75,8 @@ public:
 
         inline bool nb_read(cmd_t &data) {
             data = cmd;
+            ready = true;
             if (valid.read()) {
-                ready = true;
                 return true;
             } else {
                 return false;
@@ -130,9 +130,9 @@ public:
         }
 
         inline bool nb_write(const cmd_t &data) {
+            cmd = data;
+            valid = true;
             if (ready.read() == true) {
-                cmd = data;
-                valid = true;
                 return true;
             } else {
                 return false;

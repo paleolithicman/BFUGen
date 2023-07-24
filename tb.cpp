@@ -64,8 +64,9 @@ void tb::sink() {
     outfile.open("output.txt");
 
     // Initialize port
-    out_ready.write(1);
-    pkt_buf_ready.write(1);
+    bfu_in.ready.write(1);
+    pkt_buf_in.reset();
+    primate_stream_512_4::payload_t payload;
 
     double total_cycles = 0;
 
@@ -74,22 +75,22 @@ void tb::sink() {
         outfile << "Thread " << i << ":" << endl;
         int num_pkt_buf = 0;
         do {
-            wait();
             // if (out_wen[0].read() || out_wen[1].read()) {
             //     cout << sc_time_stamp() << ": waddr0 " << out_addr[0].read() << ", wadd1 " << out_addr[1].read() << endl;
             //     cout << sc_time_stamp() << ": wdata0 " << hex << out_data[0].read() << ", wdata1 " << out_data[1].read() << dec << endl;
             // }
             for (int j = 0; j < 2; j++) {
-                if (out_wen[j].read()) {
-                    int regid = out_addr[j].read();
-                    regs[reg2idx[regid]] = out_data[j].read();
+                if (bfu_in.wen[j].read()) {
+                    int regid = bfu_in.addr[j].read();
+                    regs[reg2idx[regid]] = bfu_in.data[j].read();
                 }
             }
-            if (pkt_buf_valid.read()) {
-                pkt_buf[num_pkt_buf] = pkt_buf_data.read();
+            if (pkt_buf_in.nb_read(payload)) {
+                pkt_buf[num_pkt_buf] = payload;
                 num_pkt_buf++;
             }
-        } while (!out_valid.read());
+            wait();
+        } while (!bfu_in.valid.read());
         end_time[i] = sc_time_stamp();
         total_cycles += (end_time[i] - start_time[i]) / clock_period;
 

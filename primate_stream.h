@@ -81,8 +81,8 @@ public:
 
         inline bool nb_read(payload_t &data) {
             data = payload;
+            ready = true;
             if (valid.read()) {
-                ready = true;
                 return true;
             } else {
                 return false;
@@ -136,9 +136,9 @@ public:
         }
 
         inline bool nb_write(const payload_t &data) {
+            payload = data;
+            valid = true;
             if (ready.read() == true) {
-                payload = data;
-                valid = true;
                 return true;
             } else {
                 return false;

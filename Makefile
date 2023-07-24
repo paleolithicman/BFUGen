@@ -11,7 +11,7 @@ LIB_DIRS=$(SYSTEMC)/lib-$(SYSTEMC_ARCH)
 INCLUDE_DIRS = -I. -I$(SYSTEMC)/include
 
 # header files used. for dependency checking
-HEADERS = inputUnit.h tb.h common.h primate_stream.h primate_ctrl.h
+HEADERS = inputUnit.h tb.h common.h primate_stream.h primate_ctrl.h primate_bfu_mc.h
 
 # source files used. for dependency checking
 SOURCES= main.cpp inputUnit.cpp tb.cpp

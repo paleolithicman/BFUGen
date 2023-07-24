@@ -75,13 +75,8 @@ void inputUnit::inputUnit_main() {
     // initialize handshake
     stream_in.reset();
     cmd_in.reset();
-    pkt_buf_valid.write(0);
-    out_valid.write(0);
-    out_tag.write(0);
-    out_flag.write(0);
-    for (int i = 0; i < 2; i++) {
-        out_wen[i].write(0);
-    }
+    pkt_buf_out.reset();
+    bfu_out.reset();
     state = 15;
     wait();
 
@@ -99,41 +94,20 @@ void inputUnit::inputUnit_main() {
             cout << sc_time_stamp() << ": in_data " << payload << endl;
             in_data_buf = payload.data;
             last_buf = payload.last;
-            tag = payload.tag;
+            tag = cmd.ar_tag;
             eth.set(payload.data.range(111, 0));
             ptp_l.set(payload.data.range(271, 112));
             if (eth.etherType == 0x88f7) {
                 // write ethernet header and ptp header
-                out_wen[0].write(1);
-                out_addr[0].write(1);
-                out_data[0].write(eth.to_uint());
-                out_wen[1].write(1);
-                out_addr[1].write(2);
-                out_data[1].write(ptp_l.to_uint());
-                out_valid.write(0);
-                out_tag.write(cmd.ar_tag);
                 state = 1;
+                bfu_out.write(cmd.ar_tag, 0, 1, eth.to_uint(), 2, ptp_l.to_uint());
             } else {
                 // write ethernet header only
-                out_wen[0].write(1);
-                out_addr[0].write(1);
-                out_data[0].write(eth.to_uint());
-                out_wen[1].write(1);
-                out_addr[1].write(22);
-                out_data[1].write(1);
-                out_valid.write(payload.last);
-                out_tag.write(cmd.ar_tag);
+                state = 11;
                 pkt_data_buf = (payload.data) >> 112;
                 pkt_empty = 112 / 8;
-                state = 11;
+                bfu_out.write(cmd.ar_tag, 0, 1, eth.to_uint(), 22, 1, payload.last);
             }
-
-            do {
-                wait();
-            } while (!out_ready.read());
-            out_wen[0].write(0);
-            out_wen[1].write(0);
-            out_valid.write(0);
         } else if (state == 1) {
             ptp_h = in_data_buf.range(463, 272);
             if (ptp_l.reserved2 == 1) {
@@ -144,73 +118,35 @@ void inputUnit::inputUnit_main() {
                 header_0.set(hdr_val);
                 in_data_buf = payload.data;
                 last_buf = payload.last;
-                out_wen[0].write(1);
-                out_addr[0].write(3);
-                out_data[0].write(ptp_h);
-                out_addr[1].write(4);
-                out_data[1].write(header_0.to_uint());
                 if (header_0.field_0 == 0) {
-                    out_wen[1].write(1);
                     state = 2;
+                    bfu_out.write(tag, 0, 3, ptp_h, 4, header_0.to_uint());
                 } else {
                     state = 3;
+                    bfu_out.write(tag, 0, 3, ptp_h);
                 }
             } else {
-                out_wen[0].write(1);
-                out_addr[0].write(3);
-                out_data[0].write(ptp_h);
-                out_wen[1].write(1);
-                out_addr[1].write(22);
-                out_data[1].write(2);
-                out_valid.write(last_buf);
                 pkt_data_buf = in_data_buf >> 464;
                 pkt_empty = 464 / 8;
                 state = 11;
+                bfu_out.write(tag, 0, 3, ptp_h, 22, 2, last_buf);
             }
-
-            do {
-                wait();
-            } while (!out_ready.read());
-            out_wen[0].write(0);
-            out_wen[1].write(0);
-            out_valid.write(0);
         } else if (state == 2) {
-            out_wen[0].write(1);
-            out_addr[0].write(22);
-            out_data[0].write(3);
-            out_wen[1].write(0);
-            out_valid.write(last_buf);
             pkt_data_buf = in_data_buf >> 16;
             pkt_empty = 16 / 8;
             state = 11;
-
-            do {
-                wait();
-            } while (!out_ready.read());
-            out_wen[0].write(0);
-            out_wen[1].write(0);
-            out_valid.write(0);
+            bfu_out.write(tag, 0, 22, 3, last_buf);
         } else if (state == 3) {
             header_1.set(in_data_buf.range(79, 16));
             header_2.set(in_data_buf.range(143, 80));
             header_3.set(in_data_buf.range(207, 144));
-            out_wen[1].write(1);
-            out_addr[1].write(4);
-            out_data[1].write(cat_header(header_1, header_0));
             cout << "in_data_buf: " << hex << in_data_buf << dec << endl;
-            cout << header_1.field_0 << endl;
             if (header_1.field_0 == 0) {
-                out_wen[0].write(1);
-                out_addr[0].write(22);
-                out_data[0].write(4);
                 pkt_data_buf = in_data_buf >> 80;
                 pkt_empty = 80 / 8;
-                out_valid.write(last_buf);
                 state = 11;
+                bfu_out.write(tag, 0, 22, 4, 4, cat_header(header_1, header_0), last_buf);
             } else {
-                out_wen[0].write(1);
-                out_addr[0].write(5);
-                out_data[0].write(cat_header(header_3, header_2));
                 if (header_2.field_0 == 0) {
                     pkt_data_buf = in_data_buf >> 144;
                     pkt_empty = 144 / 8;
@@ -222,60 +158,29 @@ void inputUnit::inputUnit_main() {
                     hdr_count = 6;
                     state = 5;
                 }
+                bfu_out.write(tag, 0, 5, cat_header(header_3, header_2), 4, cat_header(header_1, header_0));
             }
-
-            do {
-                wait();
-            } while (!out_ready.read());
-            out_wen[0].write(0);
-            out_wen[1].write(0);
-            out_valid.write(0);
         } else if (state == 5) {
-            out_wen[0].write(1);
-            out_addr[0].write(22);
-            out_data[0].write(hdr_count);
-            out_wen[1].write(0);
-            out_valid.write(last_buf);
             state = 11;
-
-            do {
-                wait();
-            } while (!out_ready.read());
-            out_wen[0].write(0);
-            out_wen[1].write(0);
-            out_valid.write(0);
+            bfu_out.write(tag, 0, 22, hdr_count, last_buf);
         } else if (state == 11) {
-            out_valid.write(0);
-            out_wen[0].write(0);
-            out_wen[1].write(0);
-            primate_stream_512_4::payload_t pkt_buf_in(pkt_data_buf, tag, pkt_empty, last_buf);
-            pkt_buf_valid.write(1);
-            pkt_buf_data.write(pkt_buf_in);
+            primate_stream_512_4::payload_t pkt_buf(pkt_data_buf, tag, pkt_empty, last_buf);
             if (last_buf) {
                 state = 0;
             } else {
                 state = 12;
             }
-
-            do {
-                wait();
-            } while (!pkt_buf_ready.read());
-            pkt_buf_valid.write(0);
+            pkt_buf_out.write(pkt_buf);
         } else if (state == 12) {
             payload = stream_in.read();
             cout << sc_time_stamp() << ": in_data " << payload << endl;
-            pkt_buf_valid.write(1);
-            pkt_buf_data.write(payload);
             if (payload.last) {
-                out_valid.write(1);
-                state = 15;
+                state = 13;
             }
-
-            do {
-                wait();
-                out_valid.write(0);
-            } while (!pkt_buf_ready.read());
-            pkt_buf_valid.write(0);
+            pkt_buf_out.write(payload);
+        } else if (state == 13) {
+            state = 15;
+            bfu_out.write_last(tag, 0);
         }
     }
 
