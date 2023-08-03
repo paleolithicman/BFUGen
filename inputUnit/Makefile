@@ -8,10 +8,10 @@ SYSTEMC_ARCH=linux64
 LIB_DIRS=$(SYSTEMC)/lib-$(SYSTEMC_ARCH)
 
 # Include directories
-INCLUDE_DIRS = -I. -I$(SYSTEMC)/include
+INCLUDE_DIRS = -I. -I$(SYSTEMC)/include -I../include
 
 # header files used. for dependency checking
-HEADERS = inputUnit.h tb.h common.h primate_stream.h primate_ctrl.h primate_bfu_mc.h
+HEADERS = inputUnit.h tb.h common.h
 
 # source files used. for dependency checking
 SOURCES= main.cpp inputUnit.cpp tb.cpp

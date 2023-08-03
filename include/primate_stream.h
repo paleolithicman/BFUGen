@@ -81,7 +81,7 @@ public:
 
         inline bool nb_read(payload_t &data) {
             data = payload;
-            ready = true;
+            // ready = true;
             if (valid.read()) {
                 return true;
             } else {
