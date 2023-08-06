@@ -105,7 +105,7 @@ public:
         }
 
 
-    protected:
+    public:
         sc_in<payload_t> payload;
         sc_out<bool>     ready;
         sc_in<bool>      valid;
@@ -161,7 +161,7 @@ public:
             return data;
         }
 
-    protected:
+    public:
         sc_out<payload_t> payload;
         sc_in<bool>       ready;
         sc_out<bool>      valid;

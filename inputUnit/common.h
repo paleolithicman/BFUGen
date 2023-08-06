@@ -4,9 +4,9 @@
 #include <systemc.h>
 #include <iostream>
 #include <fstream>
-#include "primate_stream.h"
-#include "primate_ctrl.h"
-#include "primate_bfu_mc.h"
+#include "../include/primate_stream.h"
+#include "../include/primate_ctrl.h"
+#include "../include/primate_bfu_mc.h"
 
 #define NUM_THREADS 16
 #define NUM_THREADS_LG 4
@@ -69,7 +69,7 @@ struct header_t {
     }
 };
 
-sc_biguint<192> cat_header(header_t hdr1, header_t hdr0) {
+inline sc_biguint<192> cat_header(header_t hdr1, header_t hdr0) {
     sc_biguint<192> val = (0, hdr1.field_1_field_3, hdr1.field_0, hdr0.field_1_field_3, hdr0.field_0);
     return val;
 }

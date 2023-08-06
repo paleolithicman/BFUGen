@@ -99,7 +99,7 @@ public:
         }
 
 
-    protected:
+    public:
         sc_in<cmd_t> cmd;
         sc_out<bool> ready;
         sc_in<bool>  valid;
@@ -155,7 +155,7 @@ public:
             return data;
         }
 
-    protected:
+    public:
         sc_out<cmd_t> cmd;
         sc_in<bool>   ready;
         sc_out<bool>  valid;

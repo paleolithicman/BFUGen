@@ -15,6 +15,10 @@ void inputUnit::inputUnit_main() {
     header_t header_1;
     header_t header_2;
     header_t header_3;
+    header_t header_4;
+    header_t header_5;
+    header_t header_6;
+    header_t header_7;
     primate_stream_512_4::payload_t payload;
     primate_ctrl_iu::cmd_t cmd;
 
@@ -90,19 +94,50 @@ void inputUnit::inputUnit_main() {
                 pkt_empty = 80 / 8;
                 state = 11;
                 bfu_out.write(tag, 0, 22, 4, 4, cat_header(header_1, header_0), last_buf);
-            } else {
-                if (header_2.field_0 == 0) {
-                    pkt_data_buf = in_data_buf >> 144;
-                    pkt_empty = 144 / 8;
-                    hdr_count = 5;
-                    state = 5;
-                } else {
-                    pkt_data_buf = in_data_buf >> 208;
-                    pkt_empty = 208 / 8;
-                    hdr_count = 6;
-                    state = 5;
-                }
+            } else if (header_2.field_0 == 0) {
+                pkt_data_buf = in_data_buf >> 144;
+                pkt_empty = 144 / 8;
+                hdr_count = 5;
+                state = 5;
                 bfu_out.write(tag, 0, 5, cat_header(header_3, header_2), 4, cat_header(header_1, header_0));
+            } else if (header_3.field_0 == 0) {
+                pkt_data_buf = in_data_buf >> 208;
+                pkt_empty = 208 / 8;
+                hdr_count = 6;
+                state = 5;
+                bfu_out.write(tag, 0, 5, cat_header(header_3, header_2), 4, cat_header(header_1, header_0));
+            } else {
+                state = 4;
+                bfu_out.write(tag, 0, 5, cat_header(header_3, header_2), 4, cat_header(header_1, header_0));
+            }
+        } else if (state == 4) {
+            header_4.set(in_data_buf.range(271, 208));
+            header_5.set(in_data_buf.range(335, 272));
+            header_6.set(in_data_buf.range(399, 336));
+            header_7.set(in_data_buf.range(463, 400));
+            cout << "in_data_buf: " << hex << in_data_buf << dec << endl;
+            if (header_4.field_0 == 0) {
+                pkt_data_buf = in_data_buf >> 272;
+                pkt_empty = 272 / 8;
+                state = 11;
+                bfu_out.write(tag, 0, 22, 7, 6, cat_header(header_5, header_4), last_buf);
+            } else if (header_5.field_0 == 0) {
+                pkt_data_buf = in_data_buf >> 336;
+                pkt_empty = 336 / 8;
+                state = 11;
+                bfu_out.write(tag, 0, 22, 8, 6, cat_header(header_5, header_4), last_buf);
+            } else if (header_6.field_0 == 0) {
+                pkt_data_buf = in_data_buf >> 400;
+                pkt_empty = 400 / 8;
+                hdr_count = 9;
+                state = 5;
+                bfu_out.write(tag, 0, 7, cat_header(header_7, header_6), 6, cat_header(header_5, header_4));
+            } else {
+                pkt_data_buf = in_data_buf >> 464;
+                pkt_empty = 464 / 8;
+                hdr_count = 10;
+                state = 5;
+                bfu_out.write(tag, 0, 7, cat_header(header_7, header_6), 6, cat_header(header_5, header_4));
             }
         } else if (state == 5) {
             state = 11;

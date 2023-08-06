@@ -48,7 +48,11 @@ public:
             tag.write(0);
             flag.write(0);
             wen0 = false;
+            addr0 = 0; 
+            data0 = 0;
             wen1 = false;
+            addr1 = 0;
+            data1 = 0;
         }
 
         inline void write_last(sc_uint<TAG_W> out_tag, sc_uint<IP_W> out_flag) {
@@ -92,7 +96,7 @@ public:
             wen1 = false;
         }
 
-    protected:
+    public:
         sc_in<bool>                ready;
         sc_out<bool>               valid;
         sc_out<sc_uint<TAG_W>>     tag;
@@ -207,7 +211,7 @@ public:
             valid.write(false);
         }
 
-    protected:
+    public:
         sc_out<bool>                          valid;
         sc_out<sc_uint<TAG_W>>                tag;
         sc_out<sc_uint<IP_W>>                 flag;

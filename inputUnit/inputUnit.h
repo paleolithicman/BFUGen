@@ -1,8 +1,8 @@
 #include "common.h"
 
 SC_MODULE(inputUnit) {
-    sc_in<bool> clk;
-    sc_in<bool> rst;
+    sc_in<bool> i_clk;
+    sc_in<bool> i_rst;
 
     primate_stream_512_4::in          stream_in;
 
@@ -15,7 +15,7 @@ SC_MODULE(inputUnit) {
     void inputUnit_main();
 
     SC_CTOR(inputUnit) {
-        SC_CTHREAD(inputUnit_main, clk.pos());
-        reset_signal_is(rst, true);  // true is hihg, flase is low
+        SC_CTHREAD(inputUnit_main, i_clk.pos());
+        reset_signal_is(i_rst, true);  // true is hihg, flase is low
     };
 };
