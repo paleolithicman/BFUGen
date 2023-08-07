@@ -37,7 +37,8 @@ public:
         int    empty;
         bool   last;
 
-        infile.open("/home/rui.ma/BFUGen/inputUnit/input.txt");
+        // infile.open("/home/rui.ma/BFUGen/inputUnit/input.txt");
+        infile.open("input.txt");
 
         // Reset
         stream_out.reset();
@@ -84,8 +85,8 @@ public:
     }
 
     void th_run() {
-        map<int, int> reg2idx{{1, 0}, {2, 1}, {3, 2}, {4, 3}, {5, 4}, {6, 5}, {7, 6}, {22, 5}};
-        int idx2reg[6] = {1, 2, 3, 4, 5, 6, 7, 22};
+        map<int, int> reg2idx{{1, 0}, {2, 1}, {3, 2}, {4, 3}, {5, 4}, {6, 5}, {7, 6}, {22, 7}};
+        int idx2reg[8] = {1, 2, 3, 4, 5, 6, 7, 22};
         sc_biguint<REG_WIDTH> regs[8];
         primate_stream_512_4::payload_t pkt_buf[4];
 
@@ -93,7 +94,8 @@ public:
         // sc_clock *clk_p = dynamic_cast<sc_clock*>(i_clk.get_interface());
         // clock_period = clk_p->period();
 
-        outfile.open("/home/rui.ma/BFUGen/inputUnit/output.txt");
+        outfile.open("output.txt");
+        // outfile.open("/home/rui.ma/BFUGen/inputUnit/output.txt");
 
         // Initialize port
         bfu_in.ready.write(1);

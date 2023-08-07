@@ -4,9 +4,9 @@
 #include <systemc.h>
 #include <iostream>
 #include <fstream>
-#include "primate_stream.h"
-#include "primate_ctrl.h"
-#include "primate_bfu_mc.h"
+#include "../include/primate_stream.h"
+#include "../include/primate_ctrl.h"
+#include "../include/primate_bfu_mc.h"
 
 #define NUM_THREADS 16
 #define NUM_THREADS_LG 4

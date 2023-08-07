@@ -8,13 +8,13 @@ SYSTEMC_ARCH=linux64
 LIB_DIRS=$(SYSTEMC)/lib-$(SYSTEMC_ARCH)
 
 # Include directories
-INCLUDE_DIRS = -I. -I$(SYSTEMC)/include -I../include
+INCLUDE_DIRS = -I. -I$(SYSTEMC)/include
 
 # header files used. for dependency checking
-HEADERS = outputUnit.h tb.h common.h
+HEADERS = outputUnit.h common.h
 
 # source files used. for dependency checking
-SOURCES= main.cpp outputUnit.cpp tb.cpp
+SOURCES= outputUnit.cpp tb.cpp
 
 DEPENDENCIES = \
 	Makefile \
