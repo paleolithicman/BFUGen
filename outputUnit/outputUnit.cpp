@@ -7,15 +7,28 @@ void outputUnit::outputUnit_cmd() {
 	// initialize handshake
 	cmd_in.reset();
     state = 0;
+    for (int i = 0; i < NUM_THREADS; i++) {
+    	hdr_done[i].write(0);
+    	hdr_mode[i].write(0);
+    }
+    
+#pragma hls_pipeline_init_interval 1
+#pragma hls_pipeline_stall_mode flush
 	wait();
 
 	while (true) {
 		if (state == 0) {
 			state = 1;
+			if (done) {
+				hdr_done[done_tag.read()].write(0);
+			}
 			cmd = cmd_in.read();
 		} else if (state == 1) {
-			hdr_mode[cmd.ar_tag] = cmd.ar_bits;
-			hdr_done[cmd.ar_tag] = true;
+			hdr_mode[cmd.ar_tag].write(cmd.ar_bits);
+			if (done) {
+				hdr_done[done_tag.read()].write(0);
+			}
+			hdr_done[cmd.ar_tag].write(1);
 			state = 0;
 			wait();
 		}
@@ -31,6 +44,10 @@ void outputUnit::outputUnit_req() {
 	bfu_rdreq.reset();
 	state = 0;
 	int count = 0;
+	done = 0;
+	done_tag = 0;
+#pragma hls_pipeline_init_interval 1
+#pragma hls_pipeline_stall_mode flush
 
 	wait();
 
@@ -38,8 +55,9 @@ void outputUnit::outputUnit_req() {
 		if (state != 0)
 			cout << sc_time_stamp() << ": req state" << state << endl;
 		if (state == 0) {
+			done = false;
 			if (pkt_buf_in.nb_read(pkt_in)) {
-				if (hdr_done[pkt_in.tag]) {
+				if (hdr_done[pkt_in.tag].read() == 1) {
 					state = 1;
 				}
 			}
@@ -52,7 +70,8 @@ void outputUnit::outputUnit_req() {
 			} else {
 				state = 0;
 			}
-			hdr_done[pkt_in.tag] = false;
+			done = true;
+			done_tag = pkt_in.tag;
 			bfu_rdreq.write(primate_bfu_req_t(tag, 1, 2));
 		} else if (state == 2) {
 			if (num_hdr < 5) {
@@ -68,7 +87,7 @@ void outputUnit::outputUnit_req() {
 				state = 4;
 			}
 			bfu_rdreq.write(primate_bfu_req_t(tag, 4, 5));
-		} else if (state == 4) {
+		} else {
 			state = 0;
 			bfu_rdreq.write(primate_bfu_req_t(tag, 6, 7));
 		}
@@ -91,6 +110,9 @@ void outputUnit::outputUnit_rsp() {
 	pkt_buf_in.reset();
 	bfu_out.reset();
 	state = 15;
+#pragma hls_pipeline_init_interval 1
+#pragma hls_pipeline_stall_mode flush
+
 	wait();
 
 	while (true) {
@@ -166,7 +188,7 @@ void outputUnit::outputUnit_rsp() {
 				state = 12;
 			}
 			stream_out.write(pkt_in);
-		} else if (state == 12) {
+		} else {
 			state = 15;
 			bfu_out.write(tag, 0);
 		}

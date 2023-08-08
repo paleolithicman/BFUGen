@@ -28,6 +28,9 @@ void inputUnit::inputUnit_main() {
     pkt_buf_out.reset();
     bfu_out.reset();
     state = 15;
+#pragma hls_pipeline_init_interval 1
+#pragma hls_pipeline_stall_mode flush
+    
     wait();
 
     // main FSM

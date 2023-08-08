@@ -1,7 +1,7 @@
 #include "outputUnit.h"
 #include <map>
 #define EMPTY 26
-#define HDR_COUNT 6
+#define HDR_COUNT 10
 #define NUM_PKT 2
 using namespace std;
 
@@ -47,12 +47,14 @@ sc_biguint<192> str2biguint192(string data) {
 SC_MODULE(regfile) {
 public:
     sc_in<bool>                      i_clk;
+    sc_in<bool>                      i_rst;
     primate_bfu_rdreq_ou::slave      bfu_rdreq;
     primate_bfu_rdrsp_ou::master     bfu_rdrsp;
 
     SC_HAS_PROCESS(regfile);
     regfile(sc_module_name name_) {
         SC_CTHREAD(th_run, i_clk.pos());
+        reset_signal_is(i_rst, true);  // true is hihg, flase is low
     }
 
     void th_run() {
@@ -61,6 +63,7 @@ public:
         // Reset
         bfu_rdreq.reset();
         bfu_rdrsp.reset();
+#pragma hls_pipeline_init_interval 1
         wait();
 
         while (true) {
@@ -122,6 +125,7 @@ public:
 SC_MODULE(sink) {
 public:
     sc_in<bool>                      i_clk;
+    sc_in<bool>                      i_rst;
 
     primate_stream_512_4::in         stream_in;
     std::ofstream outfile;
@@ -129,6 +133,7 @@ public:
     SC_HAS_PROCESS(sink);
     sink(sc_module_name name_) {
         SC_CTHREAD(th_run, i_clk.pos());
+        reset_signal_is(i_rst, true);  // true is hihg, flase is low
     }
 
     void th_run() {
@@ -139,6 +144,7 @@ public:
         wait();
 
         for (int i = 0; i < NUM_PKT; i++) {
+#pragma hls_pipeline_init_interval 1
             do {
                 out_data = stream_in.read();
                 outfile << out_data;
@@ -178,16 +184,18 @@ public:
 
         sink_inst = new sink("sink_inst");
         sink_inst->i_clk(clk_sig);
+        sink_inst->i_rst(rst_sig);
         sink_inst->stream_in(dut_to_tb_data);
 
         regfile_inst = new regfile("regfile_inst");
         regfile_inst->i_clk(clk_sig);
+        regfile_inst->i_rst(rst_sig);
         regfile_inst->bfu_rdreq(bfu_rdreq);
         regfile_inst->bfu_rdrsp(bfu_rdrsp);
 
         outputUnit_inst = new outputUnit("outputUnit_inst");
-        outputUnit_inst->clk(clk_sig);
-        outputUnit_inst->rst(rst_sig);
+        outputUnit_inst->i_clk(clk_sig);
+        outputUnit_inst->i_rst(rst_sig);
         outputUnit_inst->stream_out(dut_to_tb_data);
         outputUnit_inst->cmd_in(tb_to_dut_ctrl);
         outputUnit_inst->bfu_out(dut_to_tb_ctrl);

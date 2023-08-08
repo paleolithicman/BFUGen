@@ -1,8 +1,8 @@
 #include "common.h"
 
 SC_MODULE(outputUnit) {
-    sc_in<bool> clk;
-    sc_in<bool> rst;
+    sc_in<bool> i_clk;
+    sc_in<bool> i_rst;
 
     primate_stream_512_4::out         stream_out;
 
@@ -15,8 +15,10 @@ SC_MODULE(outputUnit) {
 
     primate_stream_512_4::in          pkt_buf_in;
 
-    bool hdr_done[NUM_THREADS];
-    sc_uint<8> hdr_mode[NUM_THREADS];
+    sc_signal<bool> done;
+    sc_signal<sc_uint<NUM_THREADS_LG>> done_tag;
+    sc_signal<sc_uint<1>> hdr_done[NUM_THREADS];
+    sc_signal<sc_uint<8>> hdr_mode[NUM_THREADS];
 
     sc_uint<9> port;
 
@@ -25,9 +27,12 @@ SC_MODULE(outputUnit) {
     void outputUnit_rsp();
 
     SC_CTOR(outputUnit) {
-        SC_CTHREAD(outputUnit_cmd, clk.pos());
-        SC_CTHREAD(outputUnit_req, clk.pos());
-        SC_CTHREAD(outputUnit_rsp, clk.pos());
-        reset_signal_is(rst, true);  // true is hihg, flase is low
+        SC_CTHREAD(outputUnit_cmd, i_clk.pos());
+        reset_signal_is(i_rst, true);  // true is hihg, flase is low
+        SC_CTHREAD(outputUnit_req, i_clk.pos());
+        reset_signal_is(i_rst, true);  // true is hihg, flase is low
+        SC_CTHREAD(outputUnit_rsp, i_clk.pos());
+        reset_signal_is(i_rst, true);  // true is hihg, flase is low
     };
 };
+

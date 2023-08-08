@@ -37,8 +37,8 @@ public:
         int    empty;
         bool   last;
 
-        // infile.open("/home/rui.ma/BFUGen/inputUnit/input.txt");
-        infile.open("input.txt");
+        infile.open("/home/rui.ma/BFUGen/inputUnit/input.txt");
+        // infile.open("input.txt");
 
         // Reset
         stream_out.reset();
@@ -56,6 +56,7 @@ public:
             primate_ctrl_iu::cmd_t cmd(i, 4, 1, 0, 0);
             cmd_out.write(cmd);
 
+#pragma hls_pipeline_init_interval 1
             do {
                 infile >> last >> empty >> indata;
                 primate_stream_512_4::payload_t payload(str2biguint(indata), i, empty, last);
@@ -94,8 +95,8 @@ public:
         // sc_clock *clk_p = dynamic_cast<sc_clock*>(i_clk.get_interface());
         // clock_period = clk_p->period();
 
-        outfile.open("output.txt");
-        // outfile.open("/home/rui.ma/BFUGen/inputUnit/output.txt");
+        // outfile.open("output.txt");
+        outfile.open("/home/rui.ma/BFUGen/inputUnit/output.txt");
 
         // Initialize port
         bfu_in.ready.write(1);
@@ -108,6 +109,7 @@ public:
         for (int i = 0; i < NUM_PKT; i++) {
             outfile << "Thread " << i << ":" << endl;
             int num_pkt_buf = 0;
+#pragma hls_pipeline_init_interval 1
             do {
                 // if (out_wen[0].read() || out_wen[1].read()) {
                 //     cout << sc_time_stamp() << ": waddr0 " << out_addr[0].read() << ", wadd1 " << out_addr[1].read() << endl;
