@@ -89,6 +89,12 @@ public:
             }
         }
 
+        inline void nb_pop() {
+            ready = true;
+            wait();
+            ready = false;
+        }
+
         inline void reset() {
             ready = false;
         }

@@ -11,10 +11,10 @@ LIB_DIRS=$(SYSTEMC)/lib-$(SYSTEMC_ARCH)
 INCLUDE_DIRS = -I. -I$(SYSTEMC)/include -I../include
 
 # header files used. for dependency checking
-HEADERS = inputUnit.h tb.h common.h
+HEADERS = inputUnit.h common.h
 
 # source files used. for dependency checking
-SOURCES= main.cpp inputUnit.cpp tb.cpp
+SOURCES= inputUnit.cpp tb.cpp
 
 DEPENDENCIES = \
 	Makefile \
