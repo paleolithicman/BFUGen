@@ -20,59 +20,10 @@ typedef primate_bfu_mc::write_mc<NUM_THREADS_LG, IP_WIDTH, NUM_REGS_LG, REG_WIDT
 typedef primate_bfu_mc::read_mc::req<NUM_THREADS_LG, NUM_REGS_LG>::master primate_bfu_rdreq_ou;
 typedef primate_bfu_mc::read_mc::rsp<REG_WIDTH>::slave primate_bfu_rdrsp_ou;
 
-struct ethernet_t {
-    sc_biguint<48> dstAddr;
-    sc_biguint<48> srcAddr;
-    sc_biguint<16> etherType;
-
-    void set(sc_biguint<112> bv) {
-        dstAddr = bv.range(47, 0);
-        srcAddr = bv.range(95, 48);
-        etherType = bv.range(111, 96);
-    }
-
-    sc_biguint<192> to_uint() {
-        sc_biguint<192> val = (0, etherType, srcAddr, dstAddr);
-        return val;
-    }
-};
-
-struct ptp_l_t {
-    sc_biguint<40> transportSpecific_domainNumber;
-    sc_biguint<8> reserved2;
-    sc_biguint<112> flags_reserved3;
-
-    void set(sc_biguint<160> bv) {
-        transportSpecific_domainNumber = bv.range(39, 0);
-        reserved2 = bv.range(47, 40);
-        flags_reserved3 = bv.range(159, 48);
-    }
-
-    sc_biguint<192> to_uint() {
-        sc_biguint<192> val = (0, flags_reserved3, reserved2, transportSpecific_domainNumber);
-        return val;
-    }
-};
-
-struct header_t {
-    sc_biguint<16> field_0;
-    sc_biguint<48> field_1_field_3;
-
-    void set(sc_biguint<64> bv) {
-        field_0 = bv.range(15, 0);
-        field_1_field_3 = bv.range(63, 16);
-    }
-
-    sc_biguint<192> to_uint() {
-        sc_biguint<192> val = (0, field_1_field_3, field_0);
-        return val;
-    }
-};
-
-inline sc_biguint<192> cat_header(header_t hdr1, header_t hdr0) {
-    sc_biguint<192> val = (0, hdr1.field_1_field_3, hdr1.field_0, hdr0.field_1_field_3, hdr0.field_0);
-    return val;
-}
+// inline sc_biguint<192> cat_header(header_t hdr1, header_t hdr0) {
+//     sc_biguint<192> val = (0, hdr1.field_1_field_3, hdr1.field_0, hdr0.field_1_field_3, hdr0.field_0);
+//     return val;
+// }
 
 // struct pkt_buf_t {
 //     sc_biguint<512>         data;

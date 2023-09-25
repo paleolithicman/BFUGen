@@ -37,7 +37,7 @@ public:
         int    empty;
         bool   last;
 
-        infile.open("/home/rui.ma/BFUGen/inputUnit/input.txt");
+        infile.open("/home/marui/crossroad/HLS/BFUGen/inputUnit/input.txt");
         // infile.open("input.txt");
 
         // Reset
@@ -56,7 +56,7 @@ public:
             primate_ctrl_iu::cmd_t cmd(i, 4, 1, 0, 0);
             cmd_out.write(cmd);
 
-#pragma hls_pipeline_init_interval 1
+// #pragma hls_pipeline_init_interval 1
             do {
                 infile >> last >> empty >> indata;
                 primate_stream_512_4::payload_t payload(str2biguint(indata), i, empty, last);
@@ -92,29 +92,32 @@ public:
         primate_stream_512_4::payload_t pkt_buf[4];
 
         // Extract clock period
-        // sc_clock *clk_p = dynamic_cast<sc_clock*>(i_clk.get_interface());
-        // clock_period = clk_p->period();
+        sc_clock *clk_p = dynamic_cast<sc_clock*>(i_clk.get_interface());
+        auto clock_period = clk_p->period();
 
         // outfile.open("output.txt");
-        outfile.open("/home/rui.ma/BFUGen/inputUnit/output.txt");
+        outfile.open("/home/marui/crossroad/HLS/BFUGen/inputUnit/output.txt");
 
         // Initialize port
         bfu_in.ready.write(1);
         pkt_buf_in.ready.write(1);
         primate_stream_512_4::payload_t payload;
 
-        // double total_cycles = 0;
+        double total_cycles = 0;
+
+        sc_time start_time = sc_time_stamp();
 
         // Read output coming from DUT
         for (int i = 0; i < NUM_PKT; i++) {
             outfile << "Thread " << i << ":" << endl;
             int num_pkt_buf = 0;
-#pragma hls_pipeline_init_interval 1
+// #pragma hls_pipeline_init_interval 1
             do {
                 // if (out_wen[0].read() || out_wen[1].read()) {
                 //     cout << sc_time_stamp() << ": waddr0 " << out_addr[0].read() << ", wadd1 " << out_addr[1].read() << endl;
                 //     cout << sc_time_stamp() << ": wdata0 " << hex << out_data[0].read() << ", wdata1 " << out_data[1].read() << dec << endl;
                 // }
+                wait();
                 if (bfu_in.wen0.read()) {
                     int regid = bfu_in.addr0.read();
                     regs[reg2idx[regid]] = bfu_in.data0.read();
@@ -127,7 +130,6 @@ public:
                     pkt_buf[num_pkt_buf] = payload;
                     num_pkt_buf++;
                 }
-                wait();
             } while (!bfu_in.valid.read());
             // end_time[i] = sc_time_stamp();
             // total_cycles += (end_time[i] - start_time[i]) / clock_period;
@@ -141,9 +143,12 @@ public:
             }
         }
 
+        sc_time end_time = sc_time_stamp();
+        total_cycles = (end_time - start_time) / clock_period;
+
         // Print latency
         // double total_throughput = (start_time[NUM_PKT-1] - start_time[0]) / clock_period;
-        // printf("Average lantency is %g cycles.\n", (double)(total_cycles/64));
+        printf("Average lantency is %g cycles.\n", (double)(total_cycles));
         // printf("Average throughput is %g cycles per input.\n", (double)(total_throughput/64));
 
         // End Simulation
