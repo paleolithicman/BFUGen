@@ -39,6 +39,7 @@ void inputUnit::inputUnit_main() {
 void inputUnit::inputUnit_core() {
     primate_stream_512_4::payload_t payload;
     sc_biguint<512> in_data_buf;
+    sc_biguint<512> pkt_data_buf;
     bool last_buf;
     int path;
 
@@ -64,6 +65,7 @@ void inputUnit::inputUnit_core() {
     last_buf = payload.last;
     eth.set(payload.data.range(111, 0));
     pkt_empty = 14;
+    pkt_data_buf = payload.data.range(511, 112);
     // bfu_out.write(tag, bt0, 1, eth.to_uint());
     // }
     if (eth.etherType == 0x88f7) {
@@ -74,6 +76,7 @@ void inputUnit::inputUnit_core() {
         // Input_header<ptp_h_t>(24, ptp_h); {
         ptp_h.set(payload.data.range(463, 272));
         pkt_empty = 58;
+        pkt_data_buf = payload.data.range(511, 464);
         // }
         // bfu_out.write(tag, bt0, 2, ptp_l.to_uint(), 3, ptp_h.to_uint());
         hdr_count = 1;
@@ -84,6 +87,7 @@ void inputUnit::inputUnit_core() {
             pkt_empty = 2;
             in_data_buf = payload.data;
             last_buf = payload.last;
+            pkt_data_buf = payload.data.range(511, 16);
             // }
             // bfu_out.write(tag, bt0, 4, header_0.to_uint());
             hdr_count = 2;
@@ -91,6 +95,7 @@ void inputUnit::inputUnit_core() {
                 // Input_header<header_t>(8, header_1); {
                 header_1.set(in_data_buf.range(79, 16));
                 pkt_empty = 10;
+                pkt_data_buf = payload.data.range(511, 80);
                 // }
                 // bfu_out.write(tag, bt0, 4, header_1.to_uint());
                 hdr_count = 3;
@@ -98,6 +103,7 @@ void inputUnit::inputUnit_core() {
                     // Input_header<header_t>(8, header_2); {
                     header_2.set(in_data_buf.range(143, 80));
                     pkt_empty = 18;
+                    pkt_data_buf = payload.data.range(511, 144);
                     // }
                     // bfu_out.write(tag, bt0, 5, header_2.to_uint());
                     hdr_count = 4;
@@ -105,6 +111,7 @@ void inputUnit::inputUnit_core() {
                         // Input_header<header_t>(8, header_3); {
                         header_3.set(in_data_buf.range(207, 144));
                         pkt_empty = 26;
+                        pkt_data_buf = payload.data.range(511, 208);
                         // }
                         // bfu_out.write(tag, bt0, 6, header_3.to_uint());
                         hdr_count = 5;
@@ -127,7 +134,7 @@ void inputUnit::inputUnit_core() {
     }
 
     // Input_done(); {
-    payload.data = in_data_buf.range(511, pkt_empty*8);
+    payload.data = pkt_data_buf;
     payload.empty = pkt_empty;
     payload.last = last_buf;
     pkt_buf_out.write(payload);
